@@ -2,13 +2,19 @@ const Product = require('../models/Product');
 
 const getAllProducts = async (req, res) => {
   try {
-    const { category, subCategory, city, available } = req.query;
+    const { category, subCategory, city, available, search, minRent, maxRent } = req.query;
     let filter = {};
 
     if (category) filter.category = category;
     if (subCategory) filter.subCategory = subCategory;
     if (city) filter.city = city;
     if (available) filter.availability = available === 'true';
+    if (search) filter.name = { $regex: search, $options: 'i' };
+    if (minRent || maxRent) {
+      filter.monthlyRent = {};
+      if (minRent) filter.monthlyRent.$gte = Number(minRent);
+      if (maxRent) filter.monthlyRent.$lte = Number(maxRent);
+    }
 
     const products = await Product.find(filter);
     res.json(products);

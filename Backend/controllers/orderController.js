@@ -1,6 +1,8 @@
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const Rental = require('../models/Rental');
+const User = require('../models/User');
+const { sendOrderConfirmation } = require('../config/email');
 
 const createOrder = async (req, res) => {
   try {
@@ -45,6 +47,27 @@ const createOrder = async (req, res) => {
       });
 
       await Product.findByIdAndUpdate(item.product, { availability: false });
+    }
+
+    // Send confirmation email with PDF invoice attached
+    try {
+      const user = await User.findById(req.user.id);
+      const populatedOrder = await Order.findById(order._id).populate('items.product', 'name');
+      await sendOrderConfirmation(
+        user.email,
+        user.name,
+        order._id,
+        totalAmount,
+        populatedOrder.items.map(i => ({
+          name: i.product?.name,
+          tenure: i.tenure,
+          monthlyRent: i.monthlyRent,
+          securityDeposit: i.securityDeposit
+        })),
+        deliveryAddress
+      );
+    } catch (emailError) {
+      console.log('Email failed (non-critical):', emailError.message);
     }
 
     res.status(201).json({ message: 'Order placed successfully', order });
