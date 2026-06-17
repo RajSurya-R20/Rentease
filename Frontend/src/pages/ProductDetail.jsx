@@ -67,74 +67,77 @@ const ProductDetail = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <div className="max-w-4xl mx-auto px-6 py-10">
-        <div className="bg-white rounded-xl shadow p-8 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-blue-50 rounded-xl flex items-center justify-center h-64">
-              {product.image ? (
-                <img src={product.image} alt={product.name} className="h-full w-full object-cover rounded-xl" />
-              ) : (
-                <span className="text-8xl">{product.category === 'Furniture' ? '🛋️' : '📺'}</span>
-              )}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        <div className="bg-white rounded-xl shadow p-4 sm:p-8 mb-6">
+
+          {/* Image */}
+          <div className="bg-blue-50 rounded-xl flex items-center justify-center h-48 sm:h-64 mb-6 overflow-hidden">
+            {product.image ? (
+              <img src={product.image} alt={product.name} className="h-full w-full object-cover rounded-xl" />
+            ) : (
+              <span className="text-6xl sm:text-8xl">{product.category === 'Furniture' ? '🛋️' : '📺'}</span>
+            )}
+          </div>
+
+          {/* Info */}
+          <div>
+            <span className="text-xs sm:text-sm text-blue-600 font-medium bg-blue-50 px-3 py-1 rounded-full">
+              {product.category} · {product.subCategory}
+            </span>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mt-3 mb-2">{product.name}</h1>
+            <p className="text-gray-500 text-sm sm:text-base mb-3">{product.description}</p>
+            <p className="text-gray-500 text-sm mb-3">📍 {product.city}</p>
+
+            <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium mb-4 ${
+              product.availability ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+            }`}>
+              {product.availability ? '✅ Available' : '❌ Not Available'}
             </div>
 
-            <div>
-              <span className="text-sm text-blue-600 font-medium bg-blue-50 px-3 py-1 rounded-full">
-                {product.category} · {product.subCategory}
-              </span>
-              <h1 className="text-2xl font-bold text-gray-800 mt-3 mb-2">{product.name}</h1>
-              <p className="text-gray-500 mb-4">{product.description}</p>
-              <p className="text-gray-500 mb-4">📍 {product.city}</p>
-
-              <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium mb-4 ${
-                product.availability ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-              }`}>
-                {product.availability ? '✅ Available' : '❌ Not Available'}
+            {/* Pricing */}
+            <div className="bg-gray-50 rounded-lg p-4 mb-4">
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-600 text-sm sm:text-base">Monthly Rent</span>
+                <span className="font-bold text-blue-600 text-sm sm:text-base">₹{product.monthlyRent}/month</span>
               </div>
-
-              <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                <div className="flex justify-between mb-2">
-                  <span className="text-gray-600">Monthly Rent</span>
-                  <span className="font-bold text-blue-600">₹{product.monthlyRent}/month</span>
-                </div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-gray-600">Security Deposit</span>
-                  <span className="font-semibold">₹{product.securityDeposit}</span>
-                </div>
-                <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
-                  <span>Total ({tenure} months)</span>
-                  <span className="text-blue-600">₹{totalAmount}</span>
-                </div>
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-600 text-sm sm:text-base">Security Deposit</span>
+                <span className="font-semibold text-sm sm:text-base">₹{product.securityDeposit}</span>
               </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Select Tenure</label>
-                <div className="flex gap-3">
-                  {product.tenureOptions?.map((t) => (
-                    <button key={t} onClick={() => setTenure(t)}
-                      className={`px-4 py-2 rounded-lg border font-medium transition ${
-                        tenure === t ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                      }`}>
-                      {t} months
-                    </button>
-                  ))}
-                </div>
+              <div className="flex justify-between font-bold text-base sm:text-lg border-t pt-2 mt-2">
+                <span>Total ({tenure} months)</span>
+                <span className="text-blue-600">₹{totalAmount}</span>
               </div>
-
-              <button onClick={addToCart} disabled={!product.availability}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
-                {product.availability ? '🛒 Add to Cart' : 'Not Available'}
-              </button>
             </div>
+
+            {/* Tenure */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Tenure</label>
+              <div className="flex flex-wrap gap-2">
+                {product.tenureOptions?.map((t) => (
+                  <button key={t} onClick={() => setTenure(t)}
+                    className={`px-3 py-2 rounded-lg border font-medium transition text-sm ${
+                      tenure === t ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                    }`}>
+                    {t} months
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button onClick={addToCart} disabled={!product.availability}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+              {product.availability ? '🛒 Add to Cart' : 'Not Available'}
+            </button>
           </div>
         </div>
 
-        {/* Reviews Section */}
+        {/* Reviews */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Customer Reviews</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4">Customer Reviews</h2>
 
           {user && (
-            <div className="bg-white rounded-xl shadow p-6 mb-6">
+            <div className="bg-white rounded-xl shadow p-4 sm:p-6 mb-6">
               <h3 className="font-semibold text-gray-800 mb-3">Write a Review</h3>
               <form onSubmit={handleReviewSubmit} className="space-y-3">
                 <div>
@@ -162,15 +165,15 @@ const ProductDetail = () => {
           ) : (
             <div className="space-y-4">
               {reviews.map(review => (
-                <div key={review._id} className="bg-white rounded-xl shadow p-5">
+                <div key={review._id} className="bg-white rounded-xl shadow p-4 sm:p-5">
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <p className="font-semibold text-gray-800">{review.user?.name}</p>
                       <p className="text-xs text-gray-400">{new Date(review.createdAt).toLocaleDateString()}</p>
                     </div>
-                    <span className="text-yellow-500 font-bold">{'⭐'.repeat(review.rating)}</span>
+                    <span className="text-yellow-500 font-bold text-sm">{'⭐'.repeat(review.rating)}</span>
                   </div>
-                  <p className="text-gray-600">{review.comment}</p>
+                  <p className="text-gray-600 text-sm">{review.comment}</p>
                 </div>
               ))}
             </div>

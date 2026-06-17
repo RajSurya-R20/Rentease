@@ -54,8 +54,16 @@ const Cart = () => {
     if (!deliveryAddress || !deliveryDate) { toast.error('Please fill delivery address and date'); return; }
     if (cart.length === 0) { toast.error('Cart is empty'); return; }
 
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Session expired. Please login again.');
+      navigate('/login');
+      return;
+    }
+
     try {
       const { data } = await API.post('/payment/create-order', { amount: totalAmount });
+
       const options = {
         key: data.key,
         amount: data.amount,
@@ -76,10 +84,10 @@ const Cart = () => {
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (error) {
-      toast.error('Payment failed');
+      toast.error('Session expired. Please login again.');
+      navigate('/login');
     }
   };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
