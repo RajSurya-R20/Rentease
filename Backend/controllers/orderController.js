@@ -30,47 +30,52 @@ const createOrder = async (req, res) => {
       totalAmount
     });
 
-    for (const item of items) {
+    // Create rentals and update product availability in parallel
+    await Promise.all(items.map(async (item) => {
       const startDate = new Date(deliveryDate);
       const endDate = new Date(startDate);
       endDate.setMonth(endDate.getMonth() + item.tenure);
 
-      await Rental.create({
-        user: req.user.id,
-        product: item.product,
-        order: order._id,
-        startDate,
-        endDate,
-        tenure: item.tenure,
-        monthlyRent: item.monthlyRent,
-        securityDeposit: item.securityDeposit
-      });
+      await Promise.all([
+        Rental.create({
+          user: req.user.id,
+          product: item.product,
+          order: order._id,
+          startDate,
+          endDate,
+          tenure: item.tenure,
+          monthlyRent: item.monthlyRent,
+          securityDeposit: item.securityDeposit
+        }),
+        Product.findByIdAndUpdate(item.product, { availability: false })
+      ]);
+    }));
 
-      await Product.findByIdAndUpdate(item.product, { availability: false });
-    }
-
-    // Send confirmation email with PDF invoice attached
-    try {
-      const user = await User.findById(req.user.id);
-      const populatedOrder = await Order.findById(order._id).populate('items.product', 'name');
-      await sendOrderConfirmation(
-        user.email,
-        user.name,
-        order._id,
-        totalAmount,
-        populatedOrder.items.map(i => ({
-          name: i.product?.name,
-          tenure: i.tenure,
-          monthlyRent: i.monthlyRent,
-          securityDeposit: i.securityDeposit
-        })),
-        deliveryAddress
-      );
-    } catch (emailError) {
-      console.log('Email failed (non-critical):', emailError.message);
-    }
-
+    // Respond immediately — don't wait for email
     res.status(201).json({ message: 'Order placed successfully', order });
+
+    // Send email in background (non-blocking)
+    User.findById(req.user.id).then(async (user) => {
+      try {
+        const populatedOrder = await Order.findById(order._id).populate('items.product', 'name');
+        await sendOrderConfirmation(
+          user.email,
+          user.name,
+          order._id,
+          totalAmount,
+          populatedOrder.items.map(i => ({
+            name: i.product?.name,
+            tenure: i.tenure,
+            monthlyRent: i.monthlyRent,
+            securityDeposit: i.securityDeposit
+          })),
+          deliveryAddress
+        );
+      } catch (emailError) {
+        console.log('Email failed (non-critical):', emailError.message);
+      }
+    }).catch(() => {});
+
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
