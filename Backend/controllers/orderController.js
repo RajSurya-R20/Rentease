@@ -14,7 +14,7 @@ const createOrder = async (req, res) => {
       if (!product) {
         return res.status(404).json({ message: `Product not found: ${item.product}` });
       }
-      if (!product.availability) {
+      if (!product.availability || product.stock <= 0) {
         return res.status(400).json({ message: `Product not available: ${product.name}` });
       }
       totalAmount += (product.monthlyRent * item.tenure) + product.securityDeposit;
@@ -30,25 +30,31 @@ const createOrder = async (req, res) => {
       totalAmount
     });
 
-    // Create rentals and update product availability in parallel
+    // Create rentals and update stock in parallel
     await Promise.all(items.map(async (item) => {
       const startDate = new Date(deliveryDate);
       const endDate = new Date(startDate);
       endDate.setMonth(endDate.getMonth() + item.tenure);
 
-      await Promise.all([
-        Rental.create({
-          user: req.user.id,
-          product: item.product,
-          order: order._id,
-          startDate,
-          endDate,
-          tenure: item.tenure,
-          monthlyRent: item.monthlyRent,
-          securityDeposit: item.securityDeposit
-        }),
-        Product.findByIdAndUpdate(item.product, { availability: false })
-      ]);
+      await Rental.create({
+        user: req.user.id,
+        product: item.product,
+        order: order._id,
+        startDate,
+        endDate,
+        tenure: item.tenure,
+        monthlyRent: item.monthlyRent,
+        securityDeposit: item.securityDeposit
+      });
+
+      const updatedProduct = await Product.findByIdAndUpdate(
+        item.product,
+        { $inc: { stock: -1 } },
+        { new: true }
+      );
+      if (updatedProduct.stock <= 0) {
+        await Product.findByIdAndUpdate(item.product, { availability: false });
+      }
     }));
 
     // Respond immediately — don't wait for email
