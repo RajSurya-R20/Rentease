@@ -1,15 +1,19 @@
 const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const createTransporter = () => {
+  // Decode password in case it was URL-encoded when saved in env
+  const pass = (process.env.EMAIL_PASS || '').replace(/%40/g, '@').replace(/%25/g, '%');
+  
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: pass,
+    },
+  });
+};
 
 const sendOrderConfirmation = async (userEmail, userName, orderId, totalAmount, items, deliveryAddress) => {
-  // Build PDF buffer
   const PDFDocument = require('pdfkit');
   const doc = new PDFDocument({ margin: 50 });
   const chunks = [];
@@ -59,6 +63,8 @@ const sendOrderConfirmation = async (userEmail, userName, orderId, totalAmount, 
   doc.end();
   const pdfBuffer = await pdfReady;
 
+  const transporter = createTransporter();
+
   await transporter.sendMail({
     from: `"RentEase" <${process.env.EMAIL_USER}>`,
     to: userEmail,
@@ -69,7 +75,7 @@ const sendOrderConfirmation = async (userEmail, userName, orderId, totalAmount, 
         <p>Hi <b>${userName}</b>,</p>
         <p>Your order <b>#${invoiceNo}</b> has been confirmed!</p>
         <p style="font-size:20px"><b>Total: ₹${totalAmount}</b></p>
-        <p>Please find your invoice attached to this email. You can also download it anytime from your Dashboard.</p>
+        <p>Please find your invoice attached to this email.</p>
         <hr/>
         <p style="color:#6b7280;font-size:12px">RentEase – Rent smarter, live better.</p>
       </div>
@@ -83,6 +89,7 @@ const sendOrderConfirmation = async (userEmail, userName, orderId, totalAmount, 
 };
 
 const sendRentalConfirmation = async (userEmail, userName, productName, tenure, monthlyRent) => {
+  const transporter = createTransporter();
   await transporter.sendMail({
     from: `"RentEase" <${process.env.EMAIL_USER}>`,
     to: userEmail,

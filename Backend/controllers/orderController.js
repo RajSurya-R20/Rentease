@@ -77,6 +77,7 @@ const createOrder = async (req, res) => {
           })),
           deliveryAddress
         );
+        console.log('Order confirmation email sent to', user.email);
       } catch (emailError) {
         console.log('Email failed (non-critical):', emailError.message);
       }
@@ -110,14 +111,28 @@ const getAllOrders = async (req, res) => {
 
 const updateOrderStatus = async (req, res) => {
   try {
-    const order = await Order.findByIdAndUpdate(
-      req.params.id,
-      { status: req.body.status },
-      { new: true }
-    );
+    const order = await Order.findById(req.params.id);
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
+
+    order.status = req.body.status;
+    await order.save();
+
+    // When order is returned or completed, restore product stock automatically
+    if (req.body.status === 'Returned' || req.body.status === 'Completed') {
+      await Promise.all(order.items.map(async (item) => {
+        const updatedProduct = await Product.findByIdAndUpdate(
+          item.product,
+          { $inc: { stock: 1 } },
+          { new: true }
+        );
+        if (updatedProduct && updatedProduct.stock > 0) {
+          await Product.findByIdAndUpdate(item.product, { availability: true });
+        }
+      }));
+    }
+
     res.json({ message: 'Order status updated', order });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
