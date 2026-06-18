@@ -32,3 +32,8 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+// Keep-alive: ping every 14 minutes to prevent Render free tier sleep
+const https = require('https');
+setInterval(() => {
+  https.get('https://rentease-backend-km5s.onrender.com/').catch(() => {});
+}, 14 * 60 * 1000);
