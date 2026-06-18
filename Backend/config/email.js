@@ -3,9 +3,12 @@ const nodemailer = require('nodemailer');
 const createTransporter = () => {
   // Decode password in case it was URL-encoded when saved in env
   const pass = (process.env.EMAIL_PASS || '').replace(/%40/g, '@').replace(/%25/g, '%');
-  
+
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    family: 4, // Force IPv4 — Render free tier blocks IPv6
     auth: {
       user: process.env.EMAIL_USER,
       pass: pass,
